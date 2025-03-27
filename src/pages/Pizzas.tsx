@@ -1,11 +1,10 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Edit, Plus, Pizza, Trash2, X } from "lucide-react";
+import { Edit, Plus, Pizza, Trash2, X, ArrowUp, ArrowDown } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -222,6 +221,38 @@ const Pizzas = () => {
     setIsDialogOpen(false);
   };
 
+  const incrementToppingQuantity = (toppingId: number) => {
+    setSelectedToppings(selectedToppings.map(topping => 
+      topping.id === toppingId 
+        ? { ...topping, quantity: topping.quantity + 1 } 
+        : topping
+    ));
+  };
+
+  const decrementToppingQuantity = (toppingId: number) => {
+    setSelectedToppings(selectedToppings.map(topping => 
+      topping.id === toppingId && topping.quantity > 1
+        ? { ...topping, quantity: topping.quantity - 1 } 
+        : topping
+    ));
+  };
+
+  const incrementIngredientQuantity = (ingredientId: number) => {
+    setSelectedIngredients(selectedIngredients.map(ingredient => 
+      ingredient.id === ingredientId 
+        ? { ...ingredient, quantity: ingredient.quantity + 1 } 
+        : ingredient
+    ));
+  };
+
+  const decrementIngredientQuantity = (ingredientId: number) => {
+    setSelectedIngredients(selectedIngredients.map(ingredient => 
+      ingredient.id === ingredientId && ingredient.quantity > 1
+        ? { ...ingredient, quantity: ingredient.quantity - 1 } 
+        : ingredient
+    ));
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -397,14 +428,36 @@ const Pizzas = () => {
                 <div className="mt-2">
                   {selectedToppings.map((topping) => (
                     <div key={topping.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-md mb-2">
-                      <span>{topping.name} (x{topping.quantity})</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemoveTopping(topping.id)}
-                      >
-                        <X className="h-4 w-4 text-red-500" />
-                      </Button>
+                      <span>{topping.name}</span>
+                      <div className="flex items-center">
+                        <div className="flex items-center mr-3">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0"
+                            onClick={() => decrementToppingQuantity(topping.id)}
+                            disabled={topping.quantity <= 1}
+                          >
+                            <ArrowDown className="h-4 w-4 text-gray-500" />
+                          </Button>
+                          <span className="mx-2 min-w-[24px] text-center">{topping.quantity}</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0"
+                            onClick={() => incrementToppingQuantity(topping.id)}
+                          >
+                            <ArrowUp className="h-4 w-4 text-gray-500" />
+                          </Button>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveTopping(topping.id)}
+                        >
+                          <X className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -428,14 +481,36 @@ const Pizzas = () => {
                 <div className="mt-2">
                   {selectedIngredients.map((ingredient) => (
                     <div key={ingredient.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-md mb-2">
-                      <span>{ingredient.name} (x{ingredient.quantity})</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemoveIngredient(ingredient.id)}
-                      >
-                        <X className="h-4 w-4 text-red-500" />
-                      </Button>
+                      <span>{ingredient.name}</span>
+                      <div className="flex items-center">
+                        <div className="flex items-center mr-3">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0"
+                            onClick={() => decrementIngredientQuantity(ingredient.id)}
+                            disabled={ingredient.quantity <= 1}
+                          >
+                            <ArrowDown className="h-4 w-4 text-gray-500" />
+                          </Button>
+                          <span className="mx-2 min-w-[24px] text-center">{ingredient.quantity}</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0"
+                            onClick={() => incrementIngredientQuantity(ingredient.id)}
+                          >
+                            <ArrowUp className="h-4 w-4 text-gray-500" />
+                          </Button>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveIngredient(ingredient.id)}
+                        >
+                          <X className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
