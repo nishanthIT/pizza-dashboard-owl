@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,16 +32,29 @@ type ComboItemSelectorProps = {
   onAddItem: (item: { name: string; price: number; quantity: number }) => void;
   showSizeSelector?: boolean;
   onAddItemWithSize?: (item: { name: string; price: number; quantity: number }, size: PizzaSize) => void;
+  initialItem?: { id: string, quantity: number, size?: PizzaSize };
 };
 
 export function ComboItemSelector({ 
   onAddItem, 
   showSizeSelector = false,
-  onAddItemWithSize
+  onAddItemWithSize,
+  initialItem
 }: ComboItemSelectorProps) {
   const [selectedItem, setSelectedItem] = useState<string>("");
   const [quantity, setQuantity] = useState<number>(1);
   const [selectedSize, setSelectedSize] = useState<PizzaSize>("medium");
+
+  // Initialize with initial values if provided (for editing)
+  useEffect(() => {
+    if (initialItem) {
+      setSelectedItem(initialItem.id);
+      setQuantity(initialItem.quantity);
+      if (initialItem.size) {
+        setSelectedSize(initialItem.size);
+      }
+    }
+  }, [initialItem]);
 
   const handleAddItem = () => {
     const item = menuItems.find((item) => item.id === selectedItem);
@@ -77,7 +91,9 @@ export function ComboItemSelector({
   };
 
   // Check if current selection is a pizza
-  const isPizzaSelected = menuItems.find(item => item.id === selectedItem)?.name.toLowerCase().includes('pizza');
+  const isPizzaSelected = selectedItem ? 
+    menuItems.find(item => item.id === selectedItem)?.name.toLowerCase().includes('pizza') : 
+    false;
 
   return (
     <div className="flex flex-wrap gap-4 items-end">
