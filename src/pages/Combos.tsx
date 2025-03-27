@@ -1,8 +1,10 @@
+
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import {
   Card,
@@ -19,18 +21,29 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ComboItemSelector } from "@/components/combos/ComboItemSelector";
+
+type PizzaSize = 'small' | 'medium' | 'large';
 
 type ComboItem = {
   id: string;
   name: string;
   price: number;
   quantity: number;
+  size?: PizzaSize;
 };
 
 type Combo = {
   id: string;
   name: string;
+  description: string;
   image: string;
   items: ComboItem[];
   discount: number;
@@ -44,11 +57,13 @@ const Combos = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newCombo, setNewCombo] = useState<{
     name: string;
+    description: string;
     image: File | null;
     items: ComboItem[];
     discount: number;
   }>({
     name: "",
+    description: "",
     image: null,
     items: [],
     discount: 0,
@@ -81,6 +96,7 @@ const Combos = () => {
     const combo: Combo = {
       id: crypto.randomUUID(),
       name: newCombo.name,
+      description: newCombo.description,
       image: URL.createObjectURL(newCombo.image),
       items: newCombo.items,
       discount: newCombo.discount,
@@ -89,7 +105,13 @@ const Combos = () => {
     };
 
     setCombos((prev) => [...prev, combo]);
-    setNewCombo({ name: "", image: null, items: [], discount: 0 });
+    setNewCombo({ 
+      name: "", 
+      description: "", 
+      image: null, 
+      items: [], 
+      discount: 0 
+    });
     setIsDialogOpen(false);
     toast({ title: "Success", description: "Combo created successfully" });
   };
@@ -99,8 +121,13 @@ const Combos = () => {
     toast({ title: "Success", description: "Combo deleted successfully" });
   };
 
-  const handleAddItem = (item: Omit<ComboItem, "id">) => {
-    const newItem = { ...item, id: crypto.randomUUID() };
+  const handleAddItem = (item: Omit<ComboItem, "id" | "size">, size?: PizzaSize) => {
+    const newItem = { 
+      ...item, 
+      id: crypto.randomUUID(),
+      size
+    };
+    
     setNewCombo((prev) => ({
       ...prev,
       items: [...prev.items, newItem],
@@ -119,6 +146,15 @@ const Combos = () => {
       ...prev,
       items: prev.items.map((item) =>
         item.id === id ? { ...item, quantity } : item
+      ),
+    }));
+  };
+
+  const handleSizeChange = (id: string, size: PizzaSize) => {
+    setNewCombo((prev) => ({
+      ...prev,
+      items: prev.items.map((item) =>
+        item.id === id ? { ...item, size } : item
       ),
     }));
   };
@@ -150,6 +186,17 @@ const Combos = () => {
                 />
               </div>
               <div>
+                <Label htmlFor="description">Combo Description</Label>
+                <Textarea
+                  id="description"
+                  placeholder="Example: Two large same pizzas with drinks"
+                  value={newCombo.description}
+                  onChange={(e) =>
+                    setNewCombo((prev) => ({ ...prev, description: e.target.value }))
+                  }
+                />
+              </div>
+              <div>
                 <Label htmlFor="image">Combo Image</Label>
                 <Input
                   id="image"
@@ -176,16 +223,42 @@ const Combos = () => {
               </div>
               <div className="space-y-4">
                 <Label>Add Items to Combo</Label>
-                <ComboItemSelector onAddItem={handleAddItem} />
+                <ComboItemSelector 
+                  onAddItem={(item) => handleAddItem(item)} 
+                  showSizeSelector={true}
+                  onAddItemWithSize={(item, size) => handleAddItem(item, size)}
+                />
                 <div className="space-y-2">
                   {newCombo.items.map((item) => (
                     <div
                       key={item.id}
                       className="flex items-center justify-between p-2 border rounded"
                     >
-                      <span>{item.name}</span>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{item.name}</span>
+                        {item.size && (
+                          <span className="text-sm text-gray-500">
+                            Size: {item.size.charAt(0).toUpperCase() + item.size.slice(1)}
+                          </span>
+                        )}
+                      </div>
                       <div className="flex items-center gap-2">
                         <span>Qty: {item.quantity}</span>
+                        {item.name.toLowerCase().includes('pizza') && (
+                          <Select 
+                            value={item.size || 'medium'} 
+                            onValueChange={(value) => handleSizeChange(item.id, value as PizzaSize)}
+                          >
+                            <SelectTrigger className="w-24">
+                              <SelectValue placeholder="Size" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="small">Small</SelectItem>
+                              <SelectItem value="medium">Medium</SelectItem>
+                              <SelectItem value="large">Large</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
                         <Button
                           variant="destructive"
                           size="icon"
@@ -217,6 +290,9 @@ const Combos = () => {
               />
               <CardTitle>{combo.name}</CardTitle>
               <CardDescription>
+                {combo.description && (
+                  <p className="mb-2">{combo.description}</p>
+                )}
                 {combo.discount}% off - Final Price: ${combo.finalPrice.toFixed(2)}
               </CardDescription>
             </CardHeader>
@@ -226,7 +302,7 @@ const Combos = () => {
                 {combo.items.map((item) => (
                   <div key={item.id} className="flex justify-between text-sm">
                     <span>
-                      {item.name} x{item.quantity}
+                      {item.name} {item.size && `(${item.size})`} x{item.quantity}
                     </span>
                     <span>${(item.price * item.quantity).toFixed(2)}</span>
                   </div>

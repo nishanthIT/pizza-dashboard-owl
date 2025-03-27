@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,6 +9,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+
+type PizzaSize = 'small' | 'medium' | 'large';
 
 type MenuItem = {
   id: string;
@@ -28,28 +29,59 @@ const menuItems: MenuItem[] = [
 
 type ComboItemSelectorProps = {
   onAddItem: (item: { name: string; price: number; quantity: number }) => void;
+  showSizeSelector?: boolean;
+  onAddItemWithSize?: (item: { name: string; price: number; quantity: number }, size: PizzaSize) => void;
 };
 
-export function ComboItemSelector({ onAddItem }: ComboItemSelectorProps) {
+export function ComboItemSelector({ 
+  onAddItem, 
+  showSizeSelector = false,
+  onAddItemWithSize
+}: ComboItemSelectorProps) {
   const [selectedItem, setSelectedItem] = useState<string>("");
   const [quantity, setQuantity] = useState<number>(1);
+  const [selectedSize, setSelectedSize] = useState<PizzaSize>("medium");
 
   const handleAddItem = () => {
     const item = menuItems.find((item) => item.id === selectedItem);
-    if (item) {
+    if (!item) return;
+
+    // If it's a pizza and size selector is shown, use the size-specific handler
+    const isPizza = item.name.toLowerCase().includes('pizza');
+    if (isPizza && showSizeSelector && onAddItemWithSize) {
+      onAddItemWithSize({
+        name: item.name,
+        price: adjustPriceBySize(item.price, selectedSize),
+        quantity: quantity,
+      }, selectedSize);
+    } else {
+      // Otherwise use the regular handler
       onAddItem({
         name: item.name,
         price: item.price,
         quantity: quantity,
       });
-      setSelectedItem("");
-      setQuantity(1);
+    }
+    
+    setSelectedItem("");
+    setQuantity(1);
+  };
+
+  // Adjust price based on pizza size
+  const adjustPriceBySize = (basePrice: number, size: PizzaSize): number => {
+    switch (size) {
+      case 'small': return basePrice * 0.8;
+      case 'large': return basePrice * 1.2;
+      default: return basePrice; // medium is the base price
     }
   };
 
+  // Check if current selection is a pizza
+  const isPizzaSelected = menuItems.find(item => item.id === selectedItem)?.name.toLowerCase().includes('pizza');
+
   return (
-    <div className="flex gap-4 items-end">
-      <div className="flex-1">
+    <div className="flex flex-wrap gap-4 items-end">
+      <div className="flex-1 min-w-[200px]">
         <Select value={selectedItem} onValueChange={setSelectedItem}>
           <SelectTrigger>
             <SelectValue placeholder="Select menu item" />
@@ -63,6 +95,22 @@ export function ComboItemSelector({ onAddItem }: ComboItemSelectorProps) {
           </SelectContent>
         </Select>
       </div>
+      
+      {showSizeSelector && isPizzaSelected && (
+        <div className="w-24">
+          <Select value={selectedSize} onValueChange={(value) => setSelectedSize(value as PizzaSize)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Size" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="small">Small</SelectItem>
+              <SelectItem value="medium">Medium</SelectItem>
+              <SelectItem value="large">Large</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+      
       <div className="w-24">
         <Input
           type="number"
